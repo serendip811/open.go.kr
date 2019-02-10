@@ -18,6 +18,7 @@ config.read('config.ini')
 
 USER_ID = config['DEFAULT']['USER_ID']
 PASSWORD = config['DEFAULT']['PASSWORD']
+FROM_DATE = config['DEFAULT'].get("FROM_DATE", None)
 CHROME_DRIVER_PATH = "./chromedriver"
 BILL_DB = "./bill.db"
 OUTPUT_HTML = "./result.html"
@@ -27,10 +28,6 @@ BILLING_LIST_URI = 'https://www.open.go.kr/pa/billing/openBilling/openBillingLis
 
 # driver setting
 driver = webdriver.Chrome(executable_path=CHROME_DRIVER_PATH)
-
-from_date = None
-if(len(sys.argv) > 1) :
-	from_date= sys.argv[1]
 
 def wait_until(sec, until):
 	WebDriverWait(driver, sec).until(until)
@@ -63,8 +60,8 @@ def init_page_list():
 	# select = driver.find_element_by_id('rowPage')
 	# driver.execute_script('arguments[0].getElementsByTagName("option")[3].value = 10000', select)
 
-	if from_date :
-		driver.execute_script('document.getElementById("stRceptPot").value = "'+from_date+'"')
+	if FROM_DATE :
+		driver.execute_script('document.getElementById("stRceptPot").value = "'+FROM_DATE+'"')
 
 	select = Select(driver.find_element_by_id('rowPage'))
 	select.select_by_visible_text('100')
