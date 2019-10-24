@@ -6,6 +6,7 @@ import requests
 import os
 import errno
 import configparser
+import sys
 from selenium import webdriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -126,26 +127,31 @@ def set_row(idx):
 				driver.execute_script('document.getElementById("modal_back").remove()')
 				
 			else :
-				file_name = driver.find_element_by_id('dntcFileListTxt').find_element(By.TAG_NAME, "a").text
+				files = driver.find_element_by_id('dntcFileListTxt').find_elements(By.TAG_NAME, "a")
+				file_names = []
+				for file in files:
 
-				s = requests.Session()
-				for cookie in driver.get_cookies(): 
-					c = {cookie['name']: cookie['value']} 
-					s.cookies.update(c)
-				res = s.get(href)
+					file_name = file.text
 
-				# file write
-				file_path = './'+bill['subject']+'/'+bill['city']+'/'+file_name
-				if not os.path.exists(os.path.dirname(file_path)):
-					try:
-						os.makedirs(os.path.dirname(file_path))
-					except OSError as exc: # Guard against race condition
-						if exc.errno != errno.EEXIST:
-							raise
-				with open(file_path, "wb") as f:
-					f.write(res.content)
+					s = requests.Session()
+					for cookie in driver.get_cookies(): 
+						c = {cookie['name']: cookie['value']} 
+						s.cookies.update(c)
+					res = s.get(href)
 
-				bill['file_name'] = file_name
+					# file write
+					file_path = './'+bill['subject']+'/'+bill['city']+'/'+file_name
+					if not os.path.exists(os.path.dirname(file_path)):
+						try:
+							os.makedirs(os.path.dirname(file_path))
+						except OSError as exc: # Guard against race condition
+							if exc.errno != errno.EEXIST:
+								raise
+					with open(file_path, "wb") as f:
+						f.write(res.content)
+					file_names.append(file_name)
+
+				bill['file_name'] = "|".join(file_names)
 
 		upsert(bill)
 
@@ -217,7 +223,8 @@ with open(OUTPUT_HTML, "w") as f:
 			for m in range(0,10):
 				html += "<td>"
 				if m == 8 :
-					html+= '<a href="file:///'+os.getcwd()+'/'+str(row[2])+'/'+str(row[3])+'/'+str(row[m])+'">'+str(row[m])+'</a>'
+					for file in row[m].split("|"):
+						html+= '<a href="file:///'+os.getcwd()+'/'+str(row[2])+'/'+str(row[3])+'/'+str(file)+'">'+str(file)+'</a><br/>'
 				else :
 					html+= str(row[m])
 				html += "</td>"
@@ -226,9 +233,5 @@ with open(OUTPUT_HTML, "w") as f:
 	f.write(html)
 
 print("finish!")
-exit()
-
-
-
-
+sys.exit()
 
